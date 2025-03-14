@@ -1,6 +1,6 @@
 use std::{fs, io};
 
-use clap::{builder::Str, command, value_parser, Arg, ArgAction};
+use clap::{command, value_parser, Arg, ArgAction};
 
 fn main() {
     let matches = command!()
@@ -36,24 +36,14 @@ fn list_files(target_path: &str, all: bool) -> io::Result<()> {
     let entries = fs::read_dir(target_path)?;
     println!("\tName\n\t————");
     for entry in entries {
-        if let Ok(entry) = entry {
-            if let Some(file_name) = entry.file_name().to_str() {
-                if let Ok(file_type) = entry.file_type() {
-                    if let Some(first_char) = file_name.chars().nth(0) {
-                        if first_char == '.' && !all {
-                            continue;
-                        }
-                    }
-                    let mut prefix = String::from("\t");
-                    if file_type.is_dir() {
-                        prefix = format!("d{prefix}");
-                    }
-                    println!("{}{}", prefix, file_name)
-                }
-            } else {
-                println!("Invalid UTF-8");
-            }
+        let entry = entry?;
+        let file_name = entry.file_name().to_string_lossy().into_owned();
+        let file_type = entry.file_type()?;
+        if file_name.starts_with('.') && !all {
+            continue;
         }
+        let prefix = if file_type.is_dir() { "d\t" } else { "\t" };
+        println!("{}{}", prefix, file_name)
     }
     Ok(())
 }
