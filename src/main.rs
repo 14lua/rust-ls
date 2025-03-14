@@ -1,6 +1,6 @@
 use std::{fs, io};
 
-use clap::{command, Arg, ArgAction};
+use clap::{builder::Str, command, value_parser, Arg, ArgAction};
 
 fn main() {
     let matches = command!()
@@ -12,21 +12,28 @@ fn main() {
             .long("all")
             .action(ArgAction::SetTrue)
         )
+        .arg(
+            Arg::new("target_path")
+            .help("Path to list contents from.")
+            .value_parser(value_parser!(String))
+            .default_value("./")
+        )
         .get_matches();
 
+    let target_path = matches.get_one::<String>("target_path").unwrap();
     if matches.get_flag("all") {
-        if let Err(e) = list_files(true) {
+        if let Err(e) = list_files(target_path, true) {
             eprintln!("Error listing files: {}", e);
         }
     } else {
-        if let Err(e) = list_files(false) {
+        if let Err(e) = list_files(target_path, false) {
             eprintln!("Error listing files: {}", e);
         }
     }
 }
 
-fn list_files(all: bool) -> io::Result<()> {
-    let entries = fs::read_dir("./")?;
+fn list_files(target_path: &str, all: bool) -> io::Result<()> {
+    let entries = fs::read_dir(target_path)?;
     println!("\tName\n\t————");
     for entry in entries {
         if let Ok(entry) = entry {
